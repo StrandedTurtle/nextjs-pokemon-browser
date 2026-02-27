@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { Separator } from "@radix-ui/react-separator";
@@ -13,79 +12,87 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import React, { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useEffect, useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { api } from "@/lib/pokeapi";
+import { NamedAPIResource, Pokemon } from "pokenode-ts";
+
+const ITEMS_PER_PAGE = 20;
 
 export default function Home() {
-  interface Pokemon {
-    name: string;
-    id: number;
-    image: string;
-    types: string[];
-    url: string;
-    weight: number;
-    height: number;
-    abilityName: string;
-    abilityUrl: string;
-    hp: number;
-    attack: number;
-    defense: number;
-    specialAttack: number;
-    specialDefense: number;
-    speed: number;
-  }
+  const [allPokemon, setAllPokemon] = useState<NamedAPIResource[]>([]);
+  const [filteredPokemon, setFilteredPokemon] = useState<NamedAPIResource[]>(
+    [],
+  );
+  const [displayedDetails, setDisplayedDetails] = useState<Pokemon[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [pokemon, setPokemon] = useState<Pokemon[]>([]);
-  const [nextUrl, setNextUrl] = useState("");
-  const [prevUrl, setPrevUrl] = useState("");
-
-  const initialUrl = "https://pokeapi.co/api/v2/pokemon?limit=10&offset=0";
-
+  // Initial load: Fetch the list of all pokemon (names and URLs)
   useEffect(() => {
-    fetchData(initialUrl);
+    const fetchAll = async () => {
+      try {
+        const response = await api.listPokemons(0, 10000); // There are approx 1302 right now
+        setAllPokemon(response.results);
+        setFilteredPokemon(response.results);
+      } catch (error) {
+        console.error("Error fetching full pokemon list:", error);
+      }
+    };
+    fetchAll();
   }, []);
 
-  const fetchData = async (url: string) => {
-    const response = await fetch(url);
-    const data = await response.json();
-    const detailedPokemon = data.results.map(
-      async (pokemon: { url: string }) => {
-        const pokeResponse = await fetch(pokemon.url);
-        const pokeData = await pokeResponse.json();
-        return {
-          name: pokeData.name,
-          id: pokeData.id,
-          image: pokeData.sprites.front_default,
-          types: pokeData.types.map(
-            (type: { type: { name: any } }) => type.type.name
-          ),
-          url: pokemon.url,
-          weight: pokeData.weight,
-          height: pokeData.height,
-          abilityName: pokeData.abilities.find(
-            (ability: { is_hidden: boolean; ability: { name: string } }) =>
-              !ability.is_hidden
-          )?.ability.name,
-          abilityUrl: pokeData.abilities.find(
-            (ability: { is_hidden: boolean; ability: { url: string } }) =>
-              !ability.is_hidden
-          )?.ability.url,
-          hp: pokeData.stats[0].base_stat,
-          attack: pokeData.stats[1].base_stat,
-          defense: pokeData.stats[2].base_stat,
-          specialAttack: pokeData.stats[3].base_stat,
-          specialDefense: pokeData.stats[4].base_stat,
-          speed: pokeData.stats[5].base_stat,
-        };
+  // Filter list on search query change
+  useEffect(() => {
+    // Basic debounce using a small timeout is fine, but for local filtering it's usually fast enough to be immediate.
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim() === "") {
+        setFilteredPokemon(allPokemon);
+      } else {
+        const lowerQuery = searchQuery.toLowerCase();
+        setFilteredPokemon(
+          allPokemon.filter((p) => p.name.includes(lowerQuery)),
+        );
       }
-    );
+      setCurrentPage(1); // Reset to first page on new search
+    }, 300);
 
-    const detailedPokemonData = await Promise.all(detailedPokemon);
-    setPokemon(detailedPokemonData);
-    setNextUrl(data.next);
-    setPrevUrl(data.previous);
-  };
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, allPokemon]);
+
+  // Load detailed data for the currently visible slice of pokemon
+  useEffect(() => {
+    const fetchVisibleDetails = async () => {
+      if (filteredPokemon.length === 0) {
+        setDisplayedDetails([]);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      const visibleSlice = filteredPokemon.slice(startIndex, endIndex);
+
+      try {
+        const detailedData = await Promise.all(
+          visibleSlice.map((p) => api.getPokemonByName(p.name)),
+        );
+        setDisplayedDetails(detailedData);
+      } catch (error) {
+        console.error("Error fetching detailed pokemon data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVisibleDetails();
+  }, [filteredPokemon, currentPage]);
+
+  const totalPages = Math.ceil(filteredPokemon.length / ITEMS_PER_PAGE);
 
   return (
     <main>
@@ -105,109 +112,98 @@ export default function Home() {
         <div className="flex w-full justify-between py-[40px]">
           <h2 className="text-forloop-text-foreground">Explore Pokémon</h2>
 
-          <div className=" flex w-full max-w-sm items-center space-x-2">
-            <Input type="text" placeholder="Find Pokémon" id="search" />
-            <Button type="submit" id="searchBtn">
-              Search
-            </Button>
+          <div className="flex w-full max-w-sm items-center space-x-2">
+            <Input
+              type="text"
+              placeholder="Find Pokémon..."
+              id="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-[20px] gap-y-[40px] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-x-[80px]">
-          {" "}
-          {/*Grid for cards*/}
-          {/*make cards with retrieved pokemon data*/}
-          {pokemon.map((poke) => (
-            <Link
-              href={{
-                pathname: "/details",
-                query: {
-                  name: poke.name,
-                  id: poke.id,
-                  image: poke.image,
-                  types: poke.types,
-                  url: poke.url,
-                  weight: poke.weight,
-                  height: poke.height,
-                  abilityName: poke.abilityName,
-                  abilityUrl: poke.abilityUrl,
-                  hp: poke.hp,
-                  attack: poke.attack,
-                  defense: poke.defense,
-                  specialAttack: poke.specialAttack,
-                  specialDefense: poke.specialDefense,
-                  speed: poke.speed,
-                },
-              }}
-              key={poke.id}
-            >
-              {/*Send data to details page*/}
-              <Card className="grid grid-cols-1 size-fit ease-in-out duration-300 hover:shadow-xl">
-                <CardHeader className="p-0 max-h-[224px] max-w-[264]">
-                  <img
-                    className="bg-forloop-bg-secondary w-full h-full object-cover rounded-t-[10px] rendering-pixelated"
-                    src={poke?.image}
-                    width={266}
-                    height={224}
-                    alt="Pokemon Image"
-                  />
-                </CardHeader>
-                <div className="flex h-[103px] w-[266px] py-[24px]">
-                  <CardContent className="h-full w-full">
-                    <CardTitle>
-                      <h3 className="text-forloop-text-foreground capitalize">
-                        {poke?.name}
-                      </h3>
-                    </CardTitle>
-                    <CardDescription>
-                      <h4 className="text-forloop-text-muted-foreground">
-                        #{poke?.id.toString().padStart(4, "0")}
-                      </h4>
-                    </CardDescription>
-                  </CardContent>
-                </div>
-                <CardFooter>
-                  <div className="flex gap-[8px]">
-                    <Badge className="capitalize">{poke?.types[0]}</Badge>
-                    {poke?.types[1] && (
-                      <Badge className="capitalize">{poke?.types[1]}</Badge>
-                    )}{" "}
-                    {/*This is to only render second type if one exists. can do this way as every pokemon has one or two types*/}
+        {/* Loading State or Grid */}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-forloop-text-muted-foreground" />
+          </div>
+        ) : displayedDetails.length === 0 ? (
+          <div className="flex justify-center items-center py-20 text-forloop-text-muted-foreground">
+            No Pokémon found matching "{searchQuery}"
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-x-[20px] gap-y-[40px] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-x-[80px]">
+            {displayedDetails.map((poke) => (
+              <Link href={`/details?id=${poke.id}`} key={poke.id}>
+                <Card className="grid grid-cols-1 size-fit ease-in-out duration-300 hover:shadow-xl">
+                  <CardHeader className="p-0 h-[224px] w-[266px] relative overflow-hidden bg-forloop-bg-secondary rounded-t-[10px]">
+                    {poke.sprites.front_default ? (
+                      <Image
+                        className="object-contain rendering-pixelated p-4"
+                        src={poke.sprites.front_default || ""}
+                        fill
+                        alt={`${poke.name} image`}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-forloop-text-muted-foreground text-sm">
+                        No Image
+                      </div>
+                    )}
+                  </CardHeader>
+                  <div className="flex h-[103px] w-[266px] py-[24px]">
+                    <CardContent className="h-full w-full">
+                      <CardTitle>
+                        <h3 className="text-forloop-text-foreground capitalize truncate">
+                          {poke.name}
+                        </h3>
+                      </CardTitle>
+                      <CardDescription>
+                        <h4 className="text-forloop-text-muted-foreground">
+                          #{poke.id.toString().padStart(4, "0")}
+                        </h4>
+                      </CardDescription>
+                    </CardContent>
                   </div>
-                </CardFooter>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                  <CardFooter>
+                    <div className="flex gap-[8px]">
+                      {poke.types.slice(0, 2).map((t) => (
+                        <Badge key={t.slot} className="capitalize">
+                          {t.type.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardFooter>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
 
-        {/*The preventDefault stops the button from refreshing page when on first page, also stops scroll back to top of page*/}
-
-        <div className="flex justify-center gap-4 mt-10">
-          <Button asChild>
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                if (prevUrl) fetchData(prevUrl);
-              }}
+        {/* Pagination Controls */}
+        {!isLoading && filteredPokemon.length > 0 && (
+          <div className="flex justify-center gap-4 mt-10 items-center">
+            <Button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              variant="outline"
             >
-              <ChevronLeft />
+              <ChevronLeft className="mr-2 h-4 w-4" />
               Back
-            </a>
-          </Button>
-          <Button asChild>
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                if (nextUrl) fetchData(nextUrl);
-              }}
+            </Button>
+            <span className="text-sm text-forloop-text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              variant="outline"
             >
               Next
-              <ChevronRight />
-            </a>
-          </Button>
-        </div>
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       <Separator className="w-full h-[1px] my-[0px] bg-forloop-border"></Separator>

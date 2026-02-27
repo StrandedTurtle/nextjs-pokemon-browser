@@ -1,10 +1,4 @@
-"use client";
-
-// Add Suspense import
-import React, { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-
-// Keep other imports the same
+import React from "react";
 import { Separator } from "@radix-ui/react-separator";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,149 +11,89 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { api } from "@/lib/pokeapi";
 
-// Create a new component for the actual content
-function PokemonDetailsContent() {
-  // Interfaces remain the same
-  interface Pokemon {
-    name: string;
-    id: number;
-    image: string;
-    types: string[];
-    url: string;
-    speciesUrl: string;
-    height: number;
-    weight: number;
-    abilityName: string;
-    abilityUrl: string;
-    hp: number;
-    attack: number;
-    defense: number;
-    specialAttack: number;
-    specialDefense: number;
-    speed: number;
+export default async function DetailsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const idStr = params.id as string;
+
+  if (!idStr) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">No Pokémon ID provided</h2>
+          <Button asChild>
+            <Link href="/">
+              <ChevronLeft className="mr-2" />
+              Return Home
+            </Link>
+          </Button>
+        </div>
+      </main>
+    );
   }
 
-  interface DetailedPokemon {
-    category: string;
-    dexinfo: string;
-    abilityInfo: string;
-    genderRate: number;
+  const id = parseInt(idStr, 10);
+
+  // Fetch from PokéAPI using pokenode-ts
+  const [pokemon, species] = await Promise.all([
+    api.getPokemonById(id),
+    api.getPokemonSpeciesById(id),
+  ]);
+
+  // Extract English specific text
+  const englishGenus =
+    species.genera
+      .find((g) => g.language.name === "en")
+      ?.genus?.replace(" Pokémon", "") || "Unknown Category";
+  const englishFlavorText =
+    species.flavor_text_entries
+      .find((entry) => entry.language.name === "en")
+      ?.flavor_text?.replace(/\f/g, " ") || "No description available.";
+
+  // Fetch the first ability's text
+  let abilityInfo = "No description available.";
+  const firstAbility = pokemon.abilities.find((a) => !a.is_hidden)?.ability;
+  if (firstAbility) {
+    const abilityName = firstAbility.name;
+    const abilityData = await api.getAbilityByName(abilityName);
+    const englishAbilityText = abilityData.flavor_text_entries
+      .find((entry) => entry.language.name === "en")
+      ?.flavor_text?.replace(/\f/g, " ");
+    if (englishAbilityText) abilityInfo = englishAbilityText;
   }
 
-  const [pokemonDetail, setDetailedPokemon] = useState<DetailedPokemon>();
-  const searchParams = useSearchParams(); // Keep useSearchParams here
-  const [pokemonData, setPokemonData] = useState<Pokemon | null>(null);
+  // Gender logic
+  const genderRate = species.gender_rate;
+  const genderText =
+    genderRate === -1
+      ? "Unknown / Genderless"
+      : genderRate === 0
+        ? "Male Only"
+        : genderRate === 8
+          ? "Female Only"
+          : "Male / Female";
 
-  // useEffect hooks remain the same
-  useEffect(() => {
-    const name = searchParams.get("name");
-    const id = searchParams.get("id");
-    const image = searchParams.get("image");
-    const types = searchParams.getAll("types");
-    const url = searchParams.get("url");
-    const weight = searchParams.get("weight");
-    const height = searchParams.get("height");
-    const abilityName = searchParams.get("abilityName");
-    const abilityUrl = searchParams.get("abilityUrl");
-    const hp = searchParams.get("hp");
-    const attack = searchParams.get("attack");
-    const defense = searchParams.get("defense");
-    const specialAttack = searchParams.get("specialAttack");
-    const specialDefense = searchParams.get("specialDefense");
-    const speed = searchParams.get("speed");
+  // Stat Mapping
+  const getStat = (name: string) =>
+    pokemon.stats.find((s) => s.stat.name === name)?.base_stat ?? 0;
+  const hp = getStat("hp");
+  const attack = getStat("attack");
+  const defense = getStat("defense");
+  const specialAttack = getStat("special-attack");
+  const specialDefense = getStat("special-defense");
+  const speed = getStat("speed");
 
-    if (
-      name &&
-      id &&
-      image &&
-      types &&
-      url &&
-      weight &&
-      height &&
-      abilityName &&
-      abilityUrl &&
-      hp &&
-      attack &&
-      defense &&
-      specialAttack &&
-      specialDefense &&
-      speed
-    ) {
-      const pokemon: Pokemon = {
-        name,
-        id: parseInt(id),
-        image,
-        types: types,
-        url,
-        weight: parseInt(weight),
-        height: parseInt(height),
-        speciesUrl: url.replace("pokemon", "pokemon-species"),
-        abilityName,
-        abilityUrl,
-        hp: parseInt(hp),
-        attack: parseInt(attack),
-        defense: parseInt(defense),
-        specialAttack: parseInt(specialAttack),
-        specialDefense: parseInt(specialDefense),
-        speed: parseInt(speed),
-      };
-      setPokemonData(pokemon);
-    }
-  }, [searchParams]);
+  const imageUrl = pokemon.sprites.front_default || "";
 
-  useEffect(() => {
-    if (pokemonData) {
-      fetch(pokemonData.speciesUrl)
-        .then((res) => res.json())
-        .then((data) => {
-          setDetailedPokemon({
-            category: data.genera
-              .find(
-                (genus: { language: { name: string } }) =>
-                  genus.language.name === "en"
-              )
-              .genus.replace(" Pokémon", ""),
-            dexinfo:
-              data.flavor_text_entries.find(
-                (entry: {
-                  language: { name: string };
-                  version: { name: string };
-                }) => entry.language.name === "en" && entry.version.name === "x"
-              )?.flavor_text || "No description available.",
-            abilityInfo: "", // Initialize abilityInfo
-            genderRate: data.gender_rate,
-          });
-        });
-      fetch(pokemonData.abilityUrl)
-        .then((res) => res.json())
-        .then((data) => {
-          setDetailedPokemon((prev) => ({
-            ...prev!,
-            abilityInfo:
-              data.flavor_text_entries.find(
-                (entry: { language: { name: string } }) =>
-                  entry.language.name === "en"
-              )?.flavor_text || "No description available.",
-          }));
-        });
-    }
-  }, [pokemonData]);
-
-  // gender determination logic remains the same
-  const genderTypes =
-    pokemonDetail?.genderRate === 0
-      ? "Male Only"
-      : pokemonDetail?.genderRate === 1
-      ? "Male / Female"
-      : pokemonDetail?.genderRate === 8
-      ? "Female Only"
-      : "No Gender";
-
-  // JSX rendering logic remains the same
   return (
     <main>
-      {/* ... rest of your JSX from the original component ... */}
       <div className="flex h-[80px] items-center pl-[80px]">
         <h3 className="text-forloop-text-primary text-left">Pokémon Browser</h3>
       </div>
@@ -168,24 +102,26 @@ function PokemonDetailsContent() {
         <div className="w-full h-[168px] my-[0px] bg-forloop-bg-primary">
           <div className="grid grid-cols-1 w-full h-full mt-[130px]">
             <div className="flex h-full w-full items-end justify-center">
-              <Avatar className="size-[208px] border-4 bg-forloop-bg-secondary">
-                <AvatarImage
-                  className="rendering-pixelated"
-                  src={pokemonData?.image}
-                  width={208}
-                  height={208}
-                  alt="Pokemon Avatar"
-                />
-                <AvatarFallback>PK</AvatarFallback>
+              <Avatar className="size-[208px] border-4 bg-forloop-bg-secondary relative">
+                {imageUrl ? (
+                  <Image
+                    className="rendering-pixelated object-contain transform scale-[0.65]"
+                    src={imageUrl}
+                    fill
+                    alt={`${pokemon.name} Avatar`}
+                  />
+                ) : (
+                  <AvatarFallback className="text-4xl">?</AvatarFallback>
+                )}
               </Avatar>
             </div>
 
             <div className="flex h-full w-full items-end justify-center">
               <h2 className="text-forloop-text-primary pr-4 capitalize">
-                {pokemonData?.name}
+                {pokemon.name}
               </h2>
               <h2 className="text-forloop-text-muted-foreground">
-                #{pokemonData?.id.toString().padStart(4, "0")}
+                #{pokemon.id.toString().padStart(4, "0")}
               </h2>
             </div>
           </div>
@@ -193,35 +129,35 @@ function PokemonDetailsContent() {
       </div>
 
       <div className="box-border h-full w-full px-[140px] pb-[40px] pt-[40px]">
-        <Card className="bg-forloop-border w-full h-full">
+        <Card className="bg-forloop-border w-full h-full shadow-sm">
           <CardHeader className="justify-center">
             <div className="flex h-full w-full items-center justify-center">
               <Avatar className="size-[100px] border-1 bg-background">
                 <AvatarImage
                   className="rendering-pixelated"
                   src="/static/cherishball.png"
-                  width={100}
-                  height={100}
                   alt="Pokeball"
                 />
                 <AvatarFallback>PB</AvatarFallback>
               </Avatar>
-              <p className="pl-6">{pokemonDetail?.dexinfo}</p>
+              <p className="pl-6 text-forloop-text-foreground">
+                {englishFlavorText}
+              </p>
             </div>
           </CardHeader>
         </Card>
 
         <div className="grid grid-cols-3 grid-rows-2 gap-6 pt-14">
-          <Card className="col-span-1 row-span-2 border-[1px] border-forloop-border w-full h-full">
-            <CardHeader>
+          <Card className="col-span-1 row-span-2 border-[1px] border-forloop-border w-full h-full shadow-sm">
+            <CardHeader className="space-y-6">
               <div>
                 <CardTitle>
                   <h3 className="text-forloop-text-primary">Height</h3>
                 </CardTitle>
                 <CardDescription>
-                  <p className="text-forloop-text-primary leading-10 pb-6">
-                    {(pokemonData?.height ?? 0) / 10}m
-                  </p>
+                  <span className="text-forloop-text-primary text-lg font-medium leading-10">
+                    {pokemon.height / 10}m
+                  </span>
                 </CardDescription>
               </div>
               <div>
@@ -229,9 +165,9 @@ function PokemonDetailsContent() {
                   <h3 className="text-forloop-text-primary">Category</h3>
                 </CardTitle>
                 <CardDescription>
-                  <p className="text-forloop-text-primary leading-10 pb-6">
-                    {pokemonDetail?.category}
-                  </p>
+                  <span className="text-forloop-text-primary text-lg font-medium leading-10">
+                    {englishGenus}
+                  </span>
                 </CardDescription>
               </div>
               <div>
@@ -239,9 +175,9 @@ function PokemonDetailsContent() {
                   <h3 className="text-forloop-text-primary">Weight</h3>
                 </CardTitle>
                 <CardDescription>
-                  <p className="text-forloop-text-primary leading-10 pb-6">
-                    {(pokemonData?.weight ?? 0) / 10}kg
-                  </p>
+                  <span className="text-forloop-text-primary text-lg font-medium leading-10">
+                    {pokemon.weight / 10}kg
+                  </span>
                 </CardDescription>
               </div>
               <div>
@@ -249,115 +185,116 @@ function PokemonDetailsContent() {
                   <h3 className="text-forloop-text-primary">Gender</h3>
                 </CardTitle>
                 <CardDescription>
-                  <p className="text-forloop-text-primary leading-10 pb-6">
-                    {genderTypes}
-                  </p>
+                  <span className="text-forloop-text-primary text-lg font-medium leading-10">
+                    {genderText}
+                  </span>
                 </CardDescription>
               </div>
             </CardHeader>
           </Card>
 
-          <Card className="col-span-1 row-span-1 border-[1px] border-forloop-border w-full h-full">
+          <Card className="col-span-1 row-span-1 border-[1px] border-forloop-border w-full h-full shadow-sm">
             <CardHeader>
               <div>
                 <CardTitle>
                   <h3 className="text-forloop-text-primary">Type</h3>
                 </CardTitle>
                 <div className="flex gap-[8px] pt-4">
-                  <Badge className="capitalize">{pokemonData?.types[0]}</Badge>
-                  {pokemonData?.types[1] && (
-                    <Badge className="capitalize">
-                      {pokemonData?.types[1]}
+                  {pokemon.types.map((t) => (
+                    <Badge
+                      key={t.slot}
+                      className="capitalize text-sm py-1 px-3"
+                    >
+                      {t.type.name}
                     </Badge>
-                  )}
-                </div>
-              </div>
-              <div>
-                <CardTitle>
-                  <h3 className="text-forloop-text-primary pt-10">
-                    Weaknesses
-                  </h3>
-                </CardTitle>
-                <div className="flex gap-[8px] pt-4">
-                  <Badge>Flying</Badge>
-                  <Badge>Fire</Badge>
-                  <Badge>Psychic</Badge>
-                  <Badge>Ice</Badge>
+                  ))}
                 </div>
               </div>
             </CardHeader>
           </Card>
 
-          <Card className="col-span-1 row-span-1 border-[1px] border-forloop-border w-full h-full">
+          <Card className="col-span-1 row-span-1 border-[1px] border-forloop-border w-full h-full shadow-sm">
             <CardHeader>
               <div>
                 <CardTitle>
-                  <h3 className="text-forloop-text-primary">Ability</h3>
+                  <h3 className="text-forloop-text-primary">Primary Ability</h3>
                 </CardTitle>
-                <CardDescription>
-                  <div>
-                    <p className="text-forloop-text-primary pt-4 capitalize">
-                      {pokemonData?.abilityName}
-                    </p>
-                    <p className="italic">{pokemonDetail?.abilityInfo}</p>
-                  </div>
+                <CardDescription className="pt-4 space-y-2">
+                  <span className="text-forloop-text-primary block font-medium capitalize text-lg">
+                    {firstAbility?.name?.replace("-", " ") || "None"}
+                  </span>
+                  <p className="italic text-base">{abilityInfo}</p>
                 </CardDescription>
               </div>
             </CardHeader>
           </Card>
 
-          <Card className="col-span-2 row-span-1 border-[1px] border-forloop-border w-full h-full">
+          <Card className="col-span-2 row-span-1 border-[1px] border-forloop-border w-full h-full shadow-sm">
             <CardHeader>
-              <div className="grid grid-cols-2 grid-rows-6 justify-between gap-4">
-                <h4 className="text-forloop-text-primary">HP</h4>
-                <Progress
-                  value={(pokemonData?.hp ?? 0) > 100 ? 100 : pokemonData?.hp}
-                ></Progress>
-                <h4 className="text-forloop-text-primary">Attack</h4>
-                <Progress
-                  value={
-                    (pokemonData?.attack ?? 0) > 100 ? 100 : pokemonData?.attack
-                  }
-                ></Progress>
-                <h4 className="text-forloop-text-primary">Defense</h4>
-                <Progress
-                  value={
-                    (pokemonData?.defense ?? 0) > 100
-                      ? 100
-                      : pokemonData?.defense
-                  }
-                ></Progress>
-                <h4 className="text-forloop-text-primary">Special Attack</h4>
-                <Progress
-                  value={
-                    (pokemonData?.specialAttack ?? 0) > 100
-                      ? 100
-                      : pokemonData?.specialAttack
-                  }
-                ></Progress>
-                <h4 className="text-forloop-text-primary">Special Defense</h4>
-                <Progress
-                  value={
-                    (pokemonData?.specialDefense ?? 0) > 100
-                      ? 100
-                      : pokemonData?.specialDefense
-                  }
-                ></Progress>
-                <h4 className="text-forloop-text-primary">Speed</h4>
-                <Progress
-                  value={
-                    (pokemonData?.speed ?? 0) > 100 ? 100 : pokemonData?.speed
-                  }
-                ></Progress>
+              <div className="grid grid-cols-2 grid-rows-6 justify-between gap-x-8 gap-y-4 items-center">
+                <h4 className="text-forloop-text-primary font-medium">HP</h4>
+                <div className="flex items-center gap-4">
+                  <Progress value={Math.min(hp, 100)} className="h-2" />
+                  <span className="text-sm font-medium w-8">{hp}</span>
+                </div>
+
+                <h4 className="text-forloop-text-primary font-medium">
+                  Attack
+                </h4>
+                <div className="flex items-center gap-4">
+                  <Progress value={Math.min(attack, 100)} className="h-2" />
+                  <span className="text-sm font-medium w-8">{attack}</span>
+                </div>
+
+                <h4 className="text-forloop-text-primary font-medium">
+                  Defense
+                </h4>
+                <div className="flex items-center gap-4">
+                  <Progress value={Math.min(defense, 100)} className="h-2" />
+                  <span className="text-sm font-medium w-8">{defense}</span>
+                </div>
+
+                <h4 className="text-forloop-text-primary font-medium">
+                  Special Attack
+                </h4>
+                <div className="flex items-center gap-4">
+                  <Progress
+                    value={Math.min(specialAttack, 100)}
+                    className="h-2"
+                  />
+                  <span className="text-sm font-medium w-8">
+                    {specialAttack}
+                  </span>
+                </div>
+
+                <h4 className="text-forloop-text-primary font-medium">
+                  Special Defense
+                </h4>
+                <div className="flex items-center gap-4">
+                  <Progress
+                    value={Math.min(specialDefense, 100)}
+                    className="h-2"
+                  />
+                  <span className="text-sm font-medium w-8">
+                    {specialDefense}
+                  </span>
+                </div>
+
+                <h4 className="text-forloop-text-primary font-medium">Speed</h4>
+                <div className="flex items-center gap-4">
+                  <Progress value={Math.min(speed, 100)} className="h-2" />
+                  <span className="text-sm font-medium w-8">{speed}</span>
+                </div>
               </div>
             </CardHeader>
           </Card>
         </div>
 
-        <Button asChild className="mt-10">
-          <a href="/">
-            <ChevronLeft></ChevronLeft>Return Home
-          </a>
+        <Button asChild className="mt-10 mb-20" size="lg">
+          <Link href="/">
+            <ChevronLeft className="mr-2" />
+            Return Home
+          </Link>
         </Button>
       </div>
 
@@ -371,15 +308,5 @@ function PokemonDetailsContent() {
         </div>
       </footer>
     </main>
-  );
-}
-
-// Default export now wraps the content component in Suspense
-export default function Home() {
-  return (
-    // Add a fallback UI, like a loading spinner or message
-    <Suspense fallback={<div>Loading Pokémon details...</div>}>
-      <PokemonDetailsContent />
-    </Suspense>
   );
 }
