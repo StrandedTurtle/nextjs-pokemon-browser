@@ -97,7 +97,7 @@ export default function Home() {
   return (
     <main>
       {/*Main header*/}
-      <div className="flex h-[244px] w-full items-center">
+      <div className="flex h-61 w-full items-center">
         <nav>
           <h1 className="text-forloop-text-primary">Pokémon Browser</h1>
           <h2 className="text-forloop-text-muted-foreground text-center">
@@ -106,10 +106,10 @@ export default function Home() {
         </nav>
       </div>
 
-      <Separator className="w-full h-[1px] my-[0px] bg-forloop-border"></Separator>
+      <Separator className="w-full h-px my-0 bg-forloop-border"></Separator>
 
-      <div className="box-border h-full w-full px-[140px] pb-[40px]">
-        <div className="flex w-full justify-between py-[40px]">
+      <div className="box-border h-full w-full px-35 pb-10">
+        <div className="flex w-full justify-between py-10">
           <h2 className="text-forloop-text-foreground">Explore Pokémon</h2>
 
           <div className="flex w-full max-w-sm items-center space-x-2">
@@ -133,11 +133,11 @@ export default function Home() {
             No Pokémon found matching "{searchQuery}"
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-x-[20px] gap-y-[40px] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-x-[80px]">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-x-20">
             {displayedDetails.map((poke) => (
               <Link href={`/details?id=${poke.id}`} key={poke.id}>
                 <Card className="grid grid-cols-1 size-fit ease-in-out duration-300 hover:shadow-xl">
-                  <CardHeader className="p-0 h-[224px] w-[266px] relative overflow-hidden bg-forloop-bg-secondary rounded-t-[10px]">
+                  <CardHeader className="p-0 h-56 w-66.5 relative overflow-hidden bg-forloop-bg-secondary rounded-t-[10px]">
                     {poke.sprites.front_default ? (
                       <Image
                         className="object-contain rendering-pixelated p-4"
@@ -151,7 +151,7 @@ export default function Home() {
                       </div>
                     )}
                   </CardHeader>
-                  <div className="flex h-[103px] w-[266px] py-[24px]">
+                  <div className="flex h-25.75 w-66.5 py-6">
                     <CardContent className="h-full w-full">
                       <CardTitle>
                         <h3 className="text-forloop-text-foreground capitalize truncate">
@@ -166,7 +166,7 @@ export default function Home() {
                     </CardContent>
                   </div>
                   <CardFooter>
-                    <div className="flex gap-[8px]">
+                    <div className="flex gap-2">
                       {poke.types.slice(0, 2).map((t) => (
                         <Badge key={t.slot} className="capitalize">
                           {t.type.name}
@@ -206,9 +206,9 @@ export default function Home() {
         )}
       </div>
 
-      <Separator className="w-full h-[1px] my-[0px] bg-forloop-border"></Separator>
+      <Separator className="w-full h-px my-0 bg-forloop-border"></Separator>
 
-      <footer className="flex h-[244px] w-full items-center justify-center">
+      <footer className="flex h-61 w-full items-center justify-center">
         <div>
           <h4 className="flex text-forloop-text-primary w-full py-10 text-center">
             Thank you for using Pokémon Browser!
