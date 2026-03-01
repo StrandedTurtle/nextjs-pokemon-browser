@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -106,7 +106,7 @@ export default function Home() {
         </nav>
       </div>
 
-      <Separator className="w-full h-px my-0 bg-forloop-border"></Separator>
+      <Separator className="bg-forloop-border my-0 h-px w-full"></Separator>
 
       <div className="box-border h-full w-full px-35 pb-10">
         <div className="flex w-full justify-between py-10">
@@ -125,28 +125,28 @@ export default function Home() {
 
         {/* Loading State or Grid */}
         {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-forloop-text-muted-foreground" />
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="text-forloop-text-muted-foreground h-8 w-8 animate-spin" />
           </div>
         ) : displayedDetails.length === 0 ? (
-          <div className="flex justify-center items-center py-20 text-forloop-text-muted-foreground">
-            No Pokémon found matching "{searchQuery}"
+          <div className="text-forloop-text-muted-foreground flex items-center justify-center py-20">
+            No Pokémon found matching &quot;{searchQuery}&quot;
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-x-20">
             {displayedDetails.map((poke) => (
               <Link href={`/details?id=${poke.id}`} key={poke.id}>
-                <Card className="grid grid-cols-1 size-fit ease-in-out duration-300 hover:shadow-xl">
-                  <CardHeader className="p-0 h-56 w-66.5 relative overflow-hidden bg-forloop-bg-secondary rounded-t-[10px]">
+                <Card className="grid size-fit grid-cols-1 duration-300 ease-in-out hover:shadow-xl">
+                  <CardHeader className="bg-forloop-bg-secondary relative h-56 w-66.5 overflow-hidden rounded-t-[10px] p-0">
                     {poke.sprites.front_default ? (
                       <Image
-                        className="object-contain rendering-pixelated p-4"
+                        className="rendering-pixelated object-contain p-4"
                         src={poke.sprites.front_default || ""}
                         fill
                         alt={`${poke.name} image`}
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-forloop-text-muted-foreground text-sm">
+                      <div className="text-forloop-text-muted-foreground flex h-full w-full items-center justify-center text-sm">
                         No Image
                       </div>
                     )}
@@ -154,7 +154,7 @@ export default function Home() {
                   <div className="flex h-25.75 w-66.5 py-6">
                     <CardContent className="h-full w-full">
                       <CardTitle>
-                        <h3 className="text-forloop-text-foreground capitalize truncate">
+                        <h3 className="text-forloop-text-foreground truncate capitalize">
                           {poke.name}
                         </h3>
                       </CardTitle>
@@ -182,7 +182,7 @@ export default function Home() {
 
         {/* Pagination Controls */}
         {!isLoading && filteredPokemon.length > 0 && (
-          <div className="flex justify-center gap-4 mt-10 items-center">
+          <div className="mt-10 flex items-center justify-center gap-4">
             <Button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
@@ -191,7 +191,7 @@ export default function Home() {
               <ChevronLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
-            <span className="text-sm text-forloop-text-muted-foreground">
+            <span className="text-forloop-text-muted-foreground text-sm">
               Page {currentPage} of {totalPages}
             </span>
             <Button
@@ -206,11 +206,11 @@ export default function Home() {
         )}
       </div>
 
-      <Separator className="w-full h-px my-0 bg-forloop-border"></Separator>
+      <Separator className="bg-forloop-border my-0 h-px w-full"></Separator>
 
       <footer className="flex h-61 w-full items-center justify-center">
         <div>
-          <h4 className="flex text-forloop-text-primary w-full py-10 text-center">
+          <h4 className="text-forloop-text-primary flex w-full py-10 text-center">
             Thank you for using Pokémon Browser!
           </h4>
         </div>

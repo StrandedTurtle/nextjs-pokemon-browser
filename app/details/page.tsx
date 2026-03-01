@@ -27,7 +27,7 @@ export default async function DetailsPage({
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">No Pokémon ID provided</h2>
+          <h2 className="mb-4 text-2xl font-bold">No Pokémon ID provided</h2>
           <Button asChild>
             <Link href="/">
               <ChevronLeft className="mr-2" />
@@ -94,18 +94,18 @@ export default async function DetailsPage({
 
   return (
     <main>
-      <div className="flex h-[80px] items-center pl-[80px]">
+      <div className="flex h-20 items-center pl-20">
         <h3 className="text-forloop-text-primary text-left">Pokémon Browser</h3>
       </div>
 
-      <div className="flex h-[380px] w-full ">
-        <div className="w-full h-[168px] my-[0px] bg-forloop-bg-primary">
-          <div className="grid grid-cols-1 w-full h-full mt-[130px]">
+      <div className="flex h-95 w-full">
+        <div className="bg-forloop-bg-primary my-0 h-42 w-full">
+          <div className="mt-32.5 grid h-full w-full grid-cols-1">
             <div className="flex h-full w-full items-end justify-center">
-              <Avatar className="size-[208px] border-4 bg-forloop-bg-secondary relative">
+              <Avatar className="bg-forloop-bg-secondary relative size-52 border-4">
                 {imageUrl ? (
                   <Image
-                    className="rendering-pixelated object-contain transform scale-[0.65]"
+                    className="rendering-pixelated scale-[0.65] transform object-contain"
                     src={imageUrl}
                     fill
                     alt={`${pokemon.name} Avatar`}
@@ -128,11 +128,11 @@ export default async function DetailsPage({
         </div>
       </div>
 
-      <div className="box-border h-full w-full px-[140px] pb-[40px] pt-[40px]">
-        <Card className="bg-forloop-border w-full h-full shadow-sm">
+      <div className="box-border h-full w-full px-35 pt-10 pb-10">
+        <Card className="bg-forloop-border h-full w-full shadow-sm">
           <CardHeader className="justify-center">
             <div className="flex h-full w-full items-center justify-center">
-              <Avatar className="size-[100px] border-1 bg-background">
+              <Avatar className="bg-background size-25 border">
                 <AvatarImage
                   className="rendering-pixelated"
                   src="/static/cherishball.png"
@@ -140,7 +140,7 @@ export default async function DetailsPage({
                 />
                 <AvatarFallback>PB</AvatarFallback>
               </Avatar>
-              <p className="pl-6 text-forloop-text-foreground">
+              <p className="text-forloop-text-foreground pl-6">
                 {englishFlavorText}
               </p>
             </div>
@@ -148,14 +148,14 @@ export default async function DetailsPage({
         </Card>
 
         <div className="grid grid-cols-3 grid-rows-2 gap-6 pt-14">
-          <Card className="col-span-1 row-span-2 border-[1px] border-forloop-border w-full h-full shadow-sm">
+          <Card className="border-forloop-border col-span-1 row-span-2 h-full w-full border shadow-sm">
             <CardHeader className="space-y-6">
               <div>
                 <CardTitle>
                   <h3 className="text-forloop-text-primary">Height</h3>
                 </CardTitle>
                 <CardDescription>
-                  <span className="text-forloop-text-primary text-lg font-medium leading-10">
+                  <span className="text-forloop-text-primary text-lg leading-10 font-medium">
                     {pokemon.height / 10}m
                   </span>
                 </CardDescription>
@@ -165,7 +165,7 @@ export default async function DetailsPage({
                   <h3 className="text-forloop-text-primary">Category</h3>
                 </CardTitle>
                 <CardDescription>
-                  <span className="text-forloop-text-primary text-lg font-medium leading-10">
+                  <span className="text-forloop-text-primary text-lg leading-10 font-medium">
                     {englishGenus}
                   </span>
                 </CardDescription>
@@ -175,7 +175,7 @@ export default async function DetailsPage({
                   <h3 className="text-forloop-text-primary">Weight</h3>
                 </CardTitle>
                 <CardDescription>
-                  <span className="text-forloop-text-primary text-lg font-medium leading-10">
+                  <span className="text-forloop-text-primary text-lg leading-10 font-medium">
                     {pokemon.weight / 10}kg
                   </span>
                 </CardDescription>
@@ -185,7 +185,7 @@ export default async function DetailsPage({
                   <h3 className="text-forloop-text-primary">Gender</h3>
                 </CardTitle>
                 <CardDescription>
-                  <span className="text-forloop-text-primary text-lg font-medium leading-10">
+                  <span className="text-forloop-text-primary text-lg leading-10 font-medium">
                     {genderText}
                   </span>
                 </CardDescription>
@@ -193,17 +193,17 @@ export default async function DetailsPage({
             </CardHeader>
           </Card>
 
-          <Card className="col-span-1 row-span-1 border-[1px] border-forloop-border w-full h-full shadow-sm">
+          <Card className="border-forloop-border col-span-1 row-span-1 h-full w-full border shadow-sm">
             <CardHeader>
               <div>
                 <CardTitle>
                   <h3 className="text-forloop-text-primary">Type</h3>
                 </CardTitle>
-                <div className="flex gap-[8px] pt-4">
+                <div className="flex gap-2 pt-4">
                   {pokemon.types.map((t) => (
                     <Badge
                       key={t.slot}
-                      className="capitalize text-sm py-1 px-3"
+                      className="px-3 py-1 text-sm capitalize"
                     >
                       {t.type.name}
                     </Badge>
@@ -213,29 +213,29 @@ export default async function DetailsPage({
             </CardHeader>
           </Card>
 
-          <Card className="col-span-1 row-span-1 border-[1px] border-forloop-border w-full h-full shadow-sm">
+          <Card className="border-forloop-border col-span-1 row-span-1 h-full w-full border shadow-sm">
             <CardHeader>
               <div>
                 <CardTitle>
                   <h3 className="text-forloop-text-primary">Primary Ability</h3>
                 </CardTitle>
-                <CardDescription className="pt-4 space-y-2">
-                  <span className="text-forloop-text-primary block font-medium capitalize text-lg">
+                <CardDescription className="space-y-2 pt-4">
+                  <span className="text-forloop-text-primary block text-lg font-medium capitalize">
                     {firstAbility?.name?.replace("-", " ") || "None"}
                   </span>
-                  <p className="italic text-base">{abilityInfo}</p>
+                  <p className="text-base italic">{abilityInfo}</p>
                 </CardDescription>
               </div>
             </CardHeader>
           </Card>
 
-          <Card className="col-span-2 row-span-1 border-[1px] border-forloop-border w-full h-full shadow-sm">
+          <Card className="border-forloop-border col-span-2 row-span-1 h-full w-full border shadow-sm">
             <CardHeader>
-              <div className="grid grid-cols-2 grid-rows-6 justify-between gap-x-8 gap-y-4 items-center">
+              <div className="grid grid-cols-2 grid-rows-6 items-center justify-between gap-x-8 gap-y-4">
                 <h4 className="text-forloop-text-primary font-medium">HP</h4>
                 <div className="flex items-center gap-4">
                   <Progress value={Math.min(hp, 100)} className="h-2" />
-                  <span className="text-sm font-medium w-8">{hp}</span>
+                  <span className="w-8 text-sm font-medium">{hp}</span>
                 </div>
 
                 <h4 className="text-forloop-text-primary font-medium">
@@ -243,7 +243,7 @@ export default async function DetailsPage({
                 </h4>
                 <div className="flex items-center gap-4">
                   <Progress value={Math.min(attack, 100)} className="h-2" />
-                  <span className="text-sm font-medium w-8">{attack}</span>
+                  <span className="w-8 text-sm font-medium">{attack}</span>
                 </div>
 
                 <h4 className="text-forloop-text-primary font-medium">
@@ -251,7 +251,7 @@ export default async function DetailsPage({
                 </h4>
                 <div className="flex items-center gap-4">
                   <Progress value={Math.min(defense, 100)} className="h-2" />
-                  <span className="text-sm font-medium w-8">{defense}</span>
+                  <span className="w-8 text-sm font-medium">{defense}</span>
                 </div>
 
                 <h4 className="text-forloop-text-primary font-medium">
@@ -262,7 +262,7 @@ export default async function DetailsPage({
                     value={Math.min(specialAttack, 100)}
                     className="h-2"
                   />
-                  <span className="text-sm font-medium w-8">
+                  <span className="w-8 text-sm font-medium">
                     {specialAttack}
                   </span>
                 </div>
@@ -275,7 +275,7 @@ export default async function DetailsPage({
                     value={Math.min(specialDefense, 100)}
                     className="h-2"
                   />
-                  <span className="text-sm font-medium w-8">
+                  <span className="w-8 text-sm font-medium">
                     {specialDefense}
                   </span>
                 </div>
@@ -283,7 +283,7 @@ export default async function DetailsPage({
                 <h4 className="text-forloop-text-primary font-medium">Speed</h4>
                 <div className="flex items-center gap-4">
                   <Progress value={Math.min(speed, 100)} className="h-2" />
-                  <span className="text-sm font-medium w-8">{speed}</span>
+                  <span className="w-8 text-sm font-medium">{speed}</span>
                 </div>
               </div>
             </CardHeader>
@@ -298,11 +298,11 @@ export default async function DetailsPage({
         </Button>
       </div>
 
-      <Separator className="w-full h-[1px] my-[0px] bg-forloop-border"></Separator>
+      <Separator className="bg-forloop-border my-0 h-px w-full"></Separator>
 
-      <footer className="flex h-[244px] w-full items-center justify-center">
+      <footer className="flex h-61 w-full items-center justify-center">
         <div>
-          <h4 className="flex text-forloop-text-primary w-full py-10 text-center">
+          <h4 className="text-forloop-text-primary flex w-full py-10 text-center">
             Thank you for using Pokémon Browser!
           </h4>
         </div>
